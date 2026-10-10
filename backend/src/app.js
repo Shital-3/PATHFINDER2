@@ -5,6 +5,8 @@ const profileRoutes = require("./routes/profile.routes");
 const dilemmaRoutes = require("./routes/dilemma.routes");
 const chatRoutes = require("./routes/chat.routes");
 const assessmentRoutes = require("./routes/assessment.routes");
+const careerRoutes = require("./routes/career.routes");
+const roadmapRoutes = require("./routes/roadmap.routes");
 
 const {
     notFound,
@@ -39,6 +41,8 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/dilemma", dilemmaRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/assessment", assessmentRoutes);
+app.use("/api/career/roadmap", roadmapRoutes);
+app.use("/api/career", careerRoutes);
 
 // Handle unknown routes and errors
 app.use(notFound);
