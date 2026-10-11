@@ -1,0 +1,68 @@
+
+name: PATHFINDER CI
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+
+permissions:
+  contents: read
+
+jobs:
+  ai-checks:
+    name: AI dependency and syntax checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get repository code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ai/package-lock.json
+
+      - name: Install AI dependencies
+        working-directory: ai
+        run: npm ci
+
+      - name: Check JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find ai -type d -name node_modules -prune -o -type f -name '*.js' -print0 | xargs -0 -r -n1 node --check
+
+  frontend-build:
+    name: Frontend build (when present)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get repository code
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install dependencies and build frontend
+        if: ${{ hashFiles('package.json') != '' }}
+        shell: bash
+        run: |
+          if [ ! -f package-lock.json ]; then
+            echo "::error::package-lock.json is required for the frontend CI build."
+            exit 1
+          fi
+
+          npm ci
+          npm run build
+
+      - name: Explain skipped frontend build
+        if: ${{ hashFiles('package.json') == '' }}
+        run: echo "Frontend package.json is not present in this branch; skipping the frontend build."
