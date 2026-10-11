@@ -1,21 +1,53 @@
 
-require("dotenv").config();
+import "dotenv/config";
 
-const { GoogleGenAI } = require("@google/genai");
+const apiKey = process.env.GROQ_API_KEY;
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
-});
-
-async function generateResponse(prompt) {
-  const response = await ai.models.generateContent({
-    model: "gemini-3.1-flash-lite",
-    contents: prompt
-  });
-
-  return response.text;
+if (!apiKey) {
+  throw new Error("GROQ_API_KEY is missing from ai/.env");
 }
 
-module.exports = {
-  generateResponse
+const callLLM = async (prompt) => {
+  try {
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: process.env.GROQ_MODEL || "openai/gpt-oss-20b",
+          messages: [
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error?.message || `Groq API Error: ${response.status}`
+      );
+    }
+
+    const answer = data?.choices?.[0]?.message?.content;
+
+    if (typeof answer !== "string" || !answer.trim()) {
+      throw new Error("Groq returned an empty response.");
+    }
+
+    return answer;
+  } catch (error) {
+    console.error("Groq API Error:", error.message);
+    throw error;
+  }
 };
+
+export default callLLM;

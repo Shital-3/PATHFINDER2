@@ -1,10 +1,30 @@
-const studentProfile = {
-  name: "",
-  education: "",
+const studentProfileSchema = {
+  education: {
+    degree: null,
+    branch: null,
+    year: null,
+    graduationYear: null,
+  },
+
   skills: [],
-  interests: [],
-  goals: "",
-  experience: ""
+
+  projectsAndExperience: {
+    projects: [],
+    internships: [],
+    workExperience: [],
+  },
+
+  careerGoal: {
+    goal: null,
+    interests: [],
+  },
+
+  dilemma: {
+    problem: null,
+    options: [],
+  },
+
+  constraints: [],
 };
 
-module.exports = studentProfile;
+export default studentProfileSchema;
