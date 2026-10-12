@@ -66,3 +66,50 @@ jobs:
       - name: Explain skipped frontend build
         if: ${{ hashFiles('package.json') == '' }}
         run: echo "Frontend package.json is not present in this branch; skipping the frontend build."
+
+  backend-checks:
+    name: Backend dependency, security and syntax checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get repository code
+        uses: actions/checkout@v7
+
+      - name: Check whether backend code exists
+        id: backend
+        shell: bash
+        run: |
+          if [ -f backend/package.json ] && [ -f backend/package-lock.json ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Node.js
+        if: ${{ steps.backend.outputs.present == 'true' }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        if: ${{ steps.backend.outputs.present == 'true' }}
+        working-directory: backend
+        run: npm ci
+
+      - name: Audit backend dependencies
+        if: ${{ steps.backend.outputs.present == 'true' }}
+        working-directory: backend
+        run: npm audit
+
+      - name: Check backend JavaScript syntax
+        if: ${{ steps.backend.outputs.present == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          find backend -type d -name node_modules -prune -o -type f -name '*.js' -print0 | xargs -0 -r -n1 node --check
+
+      - name: Explain skipped backend checks
+        if: ${{ steps.backend.outputs.present == 'false' }}
+        run: echo "Backend package files are not present in this branch; skipping backend checks."
